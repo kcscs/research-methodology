@@ -1,0 +1,58 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+% updated with editorial comments 8/9/2021
+
+\begin{document}
+
+%\title{A Sample Article Using IEEEtran.cls\\ for IEEE Journals and Transactions}
+\title{EqPropNEAT\\Extending NEAT with equlibrium propagation}
+
+\author{Cs. Karikó, M. Kovács, Zs. Tornai
+%\author{IEEE Publication Technology,~\IEEEmembership{Staff,~IEEE,}
+        % <-this % stops a space
+%\thanks{This paper was produced by the IEEE Publication Technology Group. They are in Piscataway, NJ.}% <-this % stops a space
+%\thanks{Manuscript received April 19, 2021; revised August 16, 2021.}
+}
+
+% The paper headers
+\markboth{ELTE Computer Science MSc - Research methodology course}%
+{Shell \MakeLowercase{\textit{et al.}}: A Sample Article Using IEEEtran.cls for IEEE Journals}
+
+\IEEEpubid{0000--0000/00\$00.00~\copyright~2022 IEEE}
+% Remember, if you use this you must call \IEEEpubidadjcol in the second
+% column for its text to clear the IEEEpubid mark.
+
+\maketitle
+
+\begin{abstract}
+  Artificial neural networks have been employed succesfully to solve a great variety of tasks over the past decade. In most applications, network architecture is usually decided with a trial-and-error process, relying on empirical experience.
+  The neuoroevolution of augmenting topologies algorithm (NEAT) proposes a solution to finding well fitting network architectures to a given task, however for learning weights, it only uses a simple genetic mutation rule.
+
+  This paper proposes an extension of NEAT with an additional learning step employing equilibrium propagation for learning edge weights. We claim that the resulting novel technique needs less iterations for convergence, as weights are adjusted by a method which was specifically invented for such task. Our experimental results show a significant reduction in training times on common neural network benchmark tasks, while achieving similar prediction quality.
+\end{abstract}
+
+% \begin{abstract}
+% This document describes the most common article elements and how to use the IEEEtran class with \LaTeX \ to produce files that are suitable for submission to the IEEE.  IEEEtran can produce conference, journal, and technical note (correspondence) papers with a suitable choice of class options. 
+% \end{abstract}
+
+% Opposed to the standard backpropagation approach, equlibrium propagation designed for easy and efficient hardware implementation enabling mich higher performance and faster iterations, which are even more important in the case of genetic optimization techniques.
+
+\begin{IEEEkeywords}
+neuroevolution, neat, equilibrium propagation.
+\end{IEEEkeywords}
+
+
+\end{document}
+
+
