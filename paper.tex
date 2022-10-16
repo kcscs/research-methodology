@@ -10,10 +10,19 @@
 \usepackage{verbatim}
 \usepackage{graphicx}
 \usepackage{cite}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{arrows.meta}
+\usepackage{draftwatermark}
+\SetWatermarkText{Writing Exercise\\%
+Fictive Results}
+\SetWatermarkScale{0.6}
 \hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
 % updated with editorial comments 8/9/2021
 
 \newcommand{\com}[1]{}
+\newcommand{\eqprop}{EP }
+\newcommand{\backprop}{BP }
 
 \begin{document}
 
@@ -25,6 +34,7 @@
         % <-this % stops a space
 %\thanks{This paper was produced by the IEEE Publication Technology Group. They are in Piscataway, NJ.}% <-this % stops a space
 %\thanks{Manuscript received April 19, 2021; revised August 16, 2021.}
+\thanks{disclaimer: TODO}
 }
 
 % The paper headers
@@ -63,9 +73,11 @@ As mentioned in the previous chapter, the NEAT algorithm uses a simple genetic m
 Equilibrium propagation proposes a new approach to training neural networks. Unlike conventional artificial neural network models, equilibrium propagation models the network as a continuos-time dynamic system. Training and evaluation is accomplished with a numerical simulation of changing energy states converging to an equilibrium. After the simulation has arrived at a fixed point, the results can be read from the state of output nodes. Training is achieved by "nudging" the states of the output nodes towards the correct prediction. This change than propagates throughout the network and weight updates can be computed from the two states of a given node during the evaluation and the training phase.
 
 \section{EqPropNEAT}
-Our method substitutes BP with equilibrium propagation. During the mutation stage of each generation, instead of assigning random weights to some connections, we employ equilibrium propagation iterations in order to adjust edge weights. 
+Our method substitutes BP with equilibrium propagation. During the mutation stage of each generation, instead of assigning random weights to some connections, we employ equilibrium propagation iterations in order to adjust edge weights.
 
-As the network's complexity increases with more and more generations, the search space for weights increases rapidly. In order to get the most out of each network architecture proposed by the NEAT algorithm, we suggest adjusting the number of equilibrium propagation steps run between generations according to network complexity. We have tested a number of different formulae for determining the number of necessary simulation iterations:
+As the network's complexity increases with more and more generations, the search space for weights increases rapidly. In order to get the most out of each network architecture proposed by the NEAT algorithm, we suggest adjusting the number of equilibrium propagation steps run between generations according to network complexity. Note that this means that the number of iterations varies even between species of the same generation. During the evolution process, networks only change graudally between each generation. This allows us to split the weight learning process between generations, so that the number of \eqprop iterations does not have to be enough for convergence as the training process will continue in the next generation. Too many \eqprop iterations could also cause overfitting which limits the network's ability to generalize, It even might limit the adaptibility of species in future generations. 
+
+We have tested a number of different formulae for determining the number of necessary simulation iterations:
 
 \begin{align}
   N_1 &= V\\
@@ -73,9 +85,51 @@ As the network's complexity increases with more and more generations, the search
   N_3 &= V\cdot E
 \end{align}
 
-Where $V$ and $E$ denote the number of nodes and edges respectively.
+Where $V$ and $E$ denote the number of nodes and edges respectively. 
 
 TODO: fake figure about network complexity and needed iterations
+
+\subsection{Hardware acceleration}
+As mentioned in the introduction, \eqprop was designed with effective hardware implementations in mind. It has been shown \cite{hardware_eq}, that the \eqprop training of purely analog neural networks is indeed, possible. The missing piece for accelerating most of the EqPropNEAT stages is the capability to dynamically create the analog neural network representations for the current population. This would allow the use of hardware implemented \eqprop for high-speed training. 
+
+Fortunately, field-programmable analog arrays (FPAA) provide an off the shelf solution for reprogramming the interconnects between different analog devices, enabling the creation of hardware based analog neural networks while our algorithm is running. However, implementing \eqprop requires the ability to efficiently measure voltages in our network, as well as additional circuitry for digital operations such as computing the gradient. Field-programmable gate arrays (FPGA) are a much more popular digital counterpart to FPAAs. For our use case, a mixture of both systems is needed. While such devices have been already proposed in technical literature \cite{fgbfpmsa}, to the best of our knoweledge, they have never been manufactured in a meaningful quantity yet. In theory, a mostly hardware accelerated implementation of our algorithm will be possible, once the above mentioned hardware becomes widely available. Figure \ref{fig:hardware} shows an outline of this algorithm. 
+
+Although at first glance the proposed hardware acceleration seems to improve runtimes significantly, we must mention a couple of potential performance limiting bottlenecks. Genetic algorithms in general require a population with thousands of genoms to provide enough diversity. Without this the algorithm does not work, or at least needs a lot more generations to arrive at a solution. It is also even more susceptible to overfitting. However with thousands of neural networks, with each of them potentially having at least hundreds of nodes, the required circuitry becomes problematically large. There is a high chance that even if the required hardware becomes available, it probably will only be able to contain a fraction of tha population at a time. Of course this problem can be somewhat alleviated by splitting the population into groups which are evaluated and trained in separate passes (slower runtime), however this way the number of occasions when the FPMA hardware is reconfigured with the new networks grows. In the case of modern day FPGAs the time it takes to reconfigure the entire board is usually in the realm of seconds and we believe this might not change in the near future since in most use cases this is not considered a bottleneck. As a consequence it is best to avoid reconfiguration as much as possible. At the time of writing this paper it is impossible to tell how much of a limiting factor this will be.
+
+Another potential issue is the lifetime of the hypothetic hardware. Based on similar currently available boards, each reconfiguration lowers life expectancy significantly. %Nowadays a typical FPGA 
+
+TODO: slow reconfiguration, hardware lifetime, runtime partial reconfiguration
+\tikzstyle{cloud} = [rectangle, draw, fill=gray!20, text width=1cm, text centered, minimum height=1.5em, rounded corners]
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[node distance = 1.5cm, auto]
+    \node[cloud, text width=4cm](init){Initialize population and create analog networks on FPMA};
+    \node[cloud, text width=4cm, below of=init](eval){Evaluate the genomes (in hardware)};
+    \node[cloud, text width=4cm, below of=eval](fromfpma){Copy results back from FPMA};
+    \node[cloud, text width=2cm, below of=fromfpma](cross){Crossover};
+    \node[cloud, text width=4cm, below of=cross](mut){Mutations without random edge weight changing rule};
+    \node[cloud, text width=4cm, below of=mut](tofpma2){Create analog networks on FPMA};
+    \node[cloud, text width=4cm, below of=tofpma2](eqprop){Equilibrium propagation iterations (in hardware)};
+
+    \coordinate (A) at ($(eval.east)+(1cm,0cm)$);
+    \coordinate (B) at ($(eqprop.east)+(1cm,0cm)$);
+
+    \draw[->, arrows = {-{Stealth[scale=1.5]}}](init)--(eval);
+    %\draw[->, arrows = {-{Stealth[scale=1.5]}}](tofpma1)--(eval);
+    \draw[->, arrows = {-{Stealth[scale=1.5]}}](eval)--(fromfpma);
+    \draw[->, arrows = {-{Stealth[scale=1.5]}}](fromfpma)--(cross);
+    \draw[->, arrows = {-{Stealth[scale=1.5]}}](cross)--(mut);
+    \draw[->, arrows = {-{Stealth[scale=1.5]}}](mut)--(tofpma2);
+    \draw[->, arrows = {-{Stealth[scale=1.5]}}](tofpma2)--(eqprop);
+    \draw[->, arrows = {-{Stealth[scale=1.5]}}] (eqprop) -- (B) -- node [right, align=left] {Repeat until good enough\\ solution is found} (A) -- (eval);
+  \end{tikzpicture}
+  \caption{An outline of the hardware accelerated EqPropNEAT algorithm. Note that the evaluation and weight training of genomes is entierely accomplished on the hardware level.}
+  \label{fig:hardware}
+\end{figure}
+
+
+\section{Performance}
+\section{Conclusions}
 
 %\begin{thebibliography}{1}
   \bibliographystyle{IEEEtran}
