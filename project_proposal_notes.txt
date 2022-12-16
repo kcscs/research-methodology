@@ -1,0 +1,9 @@
+propose at least one reasearch paper / year / person
+milestones
+refer to workp packages, l
+
+each work package should have more than one deliverables.
+the sum of the person month numbers for the deliverables of a WP should sum up to the person month number of the WP
+Papers go into the report category and are PU
+
+4-5 participants are enough, but we have to separate the roles
